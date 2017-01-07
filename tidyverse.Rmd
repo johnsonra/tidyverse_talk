@@ -1,10 +1,9 @@
 ---
 title: "tidyverse"
-author: "Michael Levy, Prepared for the Davis R-Users' Group"
-date: "October 13, 2016"
+author: "Randy Johnson based on a talk to the Davis R-Users' Group by Michael Levy"
+date: "January 17, 2017"
 output:
-  github_document: default
-  html_notebook: default
+  pdf_document: default
 ---
 
 ```{r setup, include = FALSE}
@@ -14,17 +13,17 @@ knitr::opts_chunk$set(cache = TRUE, error = TRUE, fig.width = 4, fig.asp = 1)
 
 ## What is the tidyverse?
 
-~~Hadleyverse~~
-
-The tidyverse is a suite of R tools that follow a tidy philosophy:
+The tidyverse is a suite of R tools that follow a [tidy philosophy](https://mran.microsoft.com/web/packages/tidyverse/vignettes/manifesto.html):
 
 ### Tidy data
 
 Put data in data frames  
 
-- Each type of observation gets a data frame
+- Each dataset gets a data frame
 - Each variable gets a column
 - Each observation gets a row
+
+Reuse existing data structures whenever possible!
 
 ### Tidy APIs
 
@@ -32,7 +31,6 @@ Functions should be consistent and easily (human) readable
 
 - Take one step at a time
 - Connect simple steps with the pipe
-- Referential transparency
 
 
 ### Okay but really, what is it? 
@@ -58,7 +56,6 @@ Suite of ~20 packages that provide consistent, user-friendly, smart-default tool
         - Easier to read
     - Tidy data: Imposes good practices
     - Type specificity
-- You probably use some of it already. Synergize.
 - Implements simple solutions to common problems (e.g. `purrr::transpose`)
 - Smarter defaults 
     - e.g. `utils::write.csv(row.names = FALSE)` = `readr::write_csv()` 
@@ -74,7 +71,7 @@ library(tidyverse)
 ```
 
 ```{r class tbl}
-tdf = tibble(x = 1:1e4, y = rnorm(1e4))  # == data_frame(x = 1:1e4, y = rnorm(1e4))
+tdf <- tibble(x = 1:1e4, y = rnorm(1e4))   # == data_frame(x = 1:1e4, y = rnorm(1e4))
 class(tdf)
 ```
 
@@ -95,10 +92,9 @@ Tibbles have some convenient and consistent defaults that are different from bas
 #### strings as factors
 
 ```{r strings as factors}
-dfs = list(
-  df = data.frame(abc = letters[1:3], xyz = letters[24:26]),
-  tbl = data_frame(abc = letters[1:3], xyz = letters[24:26])
-)
+dfs <- list(df = data.frame(abc = letters[1:3], xyz = letters[24:26]),
+            tbl = data_frame(abc = letters[1:3], xyz = letters[24:26])
+            )
 sapply(dfs, function(d) class(d$abc))
 ```
 
@@ -182,7 +178,7 @@ filter(movies, mpaa != "") %>%
 
 
 ```{r table}
-basetab = with(movies[movies$mpaa != "", ], table(year, mpaa, Animation))
+basetab <- with(movies[movies$mpaa != "", ], table(year, mpaa, Animation))
 basetab[1:5, , ]
 ```
 
@@ -192,22 +188,12 @@ basetab[1:5, , ]
 `dplyr` also does multi-table joins and can connect to various types of databases.
 
 ```{r full join}
-t1 = data_frame(alpha = letters[1:6], num = 1:6)
-t2 = data_frame(alpha = letters[4:10], num = 4:10)
+t1 <- data_frame(alpha = letters[1:6],
+                 num = 1:6)
+t2 <- data_frame(alpha = letters[4:10],
+                 num = 4:10)
 full_join(t1, t2, by = "alpha", suffix = c("_t1", "_t2"))
 ```
-
-
-Super-secret pro-tip: You can `group_by` %>% `mutate` to accomplish a summarize + join
-
-```{r group mutate}
-data_frame(group = sample(letters[1:3], 10, replace = TRUE),
-           value = rnorm(10)) %>%
-  group_by(group) %>%
-  mutate(group_average = mean(value))
-```
-
-
 
 
 ## `tidyr`
@@ -226,7 +212,7 @@ who %>%
 
 ## `ggplot2`
 
-If you don't already know and love it, check out [one of](https://d-rug.github.io/blog/2012/ggplot-introduction) [our](https://d-rug.github.io/blog/2013/xtsmarkdown) [previous](https://d-rug.github.io/blog/2013/formatting-plots-for-pubs) [talks](https://d-rug.github.io/blog/2015/ggplot-tutorial-johnston) on ggplot or any of the excellent resources on the internet. 
+We will cover this in more detail at a later point, but if you would like to know more, check out [one of](https://d-rug.github.io/blog/2012/ggplot-introduction) [their](https://d-rug.github.io/blog/2013/xtsmarkdown) [previous](https://d-rug.github.io/blog/2013/formatting-plots-for-pubs) [talks](https://d-rug.github.io/blog/2015/ggplot-tutorial-johnston) on ggplot or any of the excellent resources on the internet. 
 
 Note that the pipe and consistent API make it easy to combine functions from different packages, and the whole thing is quite readable.
 
@@ -245,9 +231,9 @@ who %>%
 For reading flat files. Faster than base with smarter defaults.
 
 ```{r make big df}
-bigdf = data_frame(int = 1:1e6, 
-                   squares = int^2, 
-                   letters = sample(letters, 1e6, replace = TRUE))
+bigdf <- data_frame(int = 1:1e6, 
+                    squares = int^2, 
+                    letters = sample(letters, 1e6, replace = TRUE))
 ```
 
 ```{r base write}
@@ -270,56 +256,15 @@ read.csv("base-write.csv", nrows = 3)
 read_csv("readr-write.csv", n_max = 3)
 ```
 
-## `broom` 
-
-`broom` is a convenient little package to work with model results. Two functions I find useful are `tidy` to extract model results and `augment` to add residuals, predictions, etc. to a data.frame.
-
-```{r make model data}
-d = data_frame(x = runif(20, 0, 10), 
-               y = 2 * x + rnorm(10))
-qplot(x, y, data = d)
-```
-
-### `tidy`
-
-```{r tidy}
-library(broom)  # Not attached with tidyverse
-model = lm(y ~ x, d)
-tidy(model)
-```
-
-### `augment`
-
-i.e. The function formerly known as `fortify`.
-
-```{r augment}
-aug = augment(model)
-aug
-```
-
-```{r plot resid}
-ggplot(aug, aes(x = x)) +
-  geom_point(aes(y = y, color = .resid)) + 
-  geom_line(aes(y = .fitted)) +
-  viridis::scale_color_viridis() +
-  theme(legend.position = c(0, 1), legend.justification = c(0, 1))
-```
-
-```{r plot cooksd}
-ggplot(aug, aes(.fitted, .resid, size = .cooksd)) + 
-  geom_point()
-```
-
-
 
 ## `purrr`
 
 `purrr` is kind of like `dplyr` for lists. It helps you repeatedly apply functions. Like the rest of the tidyverse, nothing you can't do in base R, but `purrr` makes the API consistent, encourages type specificity, and provides some nice shortcuts and speed ups.
 
 ```{r intro and speedtest}
-df = data_frame(fun = rep(c(lapply, map), 2),
-                n = rep(c(1e5, 1e7), each = 2),
-                comp_time = map2(fun, n, ~system.time(.x(1:.y, sqrt))))
+df <- data_frame(fun = rep(c(lapply, map), 2),
+                 n = rep(c(1e5, 1e7), each = 2),
+                 comp_time = map2(fun, n, ~system.time(.x(1:.y, sqrt))))
 df$comp_time
 ```
 
@@ -360,15 +305,17 @@ map_int(1:4, log, base = 2)
 `map2` is like `mapply` -- apply a function over two lists in parallel. `map_n` generalizes to any number of lists.
 
 ```{r map2}
-fwd = 1:10
-bck = 10:1
+fwd <- 1:10
+bck <- 10:1
 map2_dbl(fwd, bck, `^`)
 ```
 
 `map_if` tests each element on a function and if true applies the second function, if false returns the original element.
 
 ```{r map_if}
-data_frame(ints = 1:5, lets = letters[1:5], sqrts = ints^.5) %>%
+data_frame(ints = 1:5, 
+           lets = letters[1:5], 
+           sqrts = ints^.5) %>%
   map_if(is.numeric, ~ .x^2) 
 ```
 
@@ -379,7 +326,7 @@ Split the movies data frame by mpaa rating, fit a linear model to each data fram
 ```{r movies split models}
 movies %>% 
   filter(mpaa != "") %>%
-  split(.$mpaa) %>%
+  split(.$mpaa) %>% # str()
   map(~ lm(rating ~ budget, data = .)) %>%
   map_df(tidy, .id = "mpaa-rating") %>%
   arrange(term)
@@ -388,22 +335,20 @@ movies %>%
 List-columns make it easier to organize complex datasets. Can `map` over list-columns right in `data_frame`/`tibble` creation. And if you later want to calculate something else, everything is nicely organized in the data frame.
 
 ```{r list columns + map}
-d = 
-  data_frame(
-    dist = c("normal", "poisson", "chi-square"),
-    funs = list(rnorm, rpois, rchisq),
-    samples = map(funs, ~.(100, 5)),
-    mean = map_dbl(samples, mean),
-    var = map_dbl(samples, var)
-  )
-d$median = map_dbl(d$samples, median)
+d <- data_frame(dist = c("normal", "poisson", "chi-square"),
+                funs = list(rnorm, rpois, rchisq),
+                samples = map(funs, ~.(100, 5)),
+                mean = map_dbl(samples, mean),
+                var = map_dbl(samples, var)
+                )
+d$median <- map_dbl(d$samples, median)
 d
 ```
 
 Let's see if we can really make this purrr... Fit a linear model of diamond price by every combination of two predictors in the dataset and see which two predict best.
 
 ```{r diamonds predictors}
-train = sample(nrow(diamonds), floor(nrow(diamonds) * .67))
+train <- sample(nrow(diamonds), floor(nrow(diamonds) * .67))
 setdiff(names(diamonds), "price") %>%
   combn(2, paste, collapse = " + ") %>%
   structure(., names = .) %>%
@@ -415,47 +360,6 @@ setdiff(names(diamonds), "price") %>%
   arrange(rmse)
 ```
 
-
-### Type-stability
-
-We have seen that we can use map_lgl to ensure we get a logical vector, map_chr to ensure we get a character vector back, etc. Type stability is like a little built-in unit test. You make sure you're getting what you think you are, even in the middle of a pipeline or function. Here are two more type-stable function implemented in `purrr`.
-
-#### `flatten`
-
-Like `unlist` but can specify output type, and never recurses.
-
-```{r flatten}
-map(-1:3, ~.x ^ seq(-.5, .5, .5)) %>%
-  flatten_dbl()
-```
-
-#### `safely`
-
-```{r error}
-junk = list(letters, 1:20, median)
-map(junk, ~ log(.x))
-```
-
-- `safely` "catches" errors and always "succeeds". 
-- `try` does the same, but either returns the value or a try-error object.
-- `safely` is type-stable. It always returns a length-two list with one object NULL.
-
-```{r safely}
-safe = map(junk, ~ safely(log)(.x))  # Note the different syntax from try(log(.x)). `safely(log)` creates a new function.
-safe
-```
-
-#### `transpose` a list!
-
-Now we could conveniently move on where the function succeeded, particularly using `map_if`. To get that logical vector for the `map_if` test, we can use the `transpose` function, which inverts a list.
-
-```{r}
-transpose(safe)
-```
-
-```{r}
-map_if(transpose(safe)$result, ~!is.null(.x), median)
-```
 
 ## `stringr`
 
@@ -497,22 +401,5 @@ who %>%
   scale_y_log10() +
   theme_light() +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
-```
-         
-
-## Post-talk debugging improvisation
-
-```{r}
-pipe_stopifnot = function(df, test){
-  stopifnot(test)
-  return(df)
-}
-```
-
-```{r}
-print_and_go = function(df, what_to_print) {
-  cat(what_to_print)
-  return(df)
-}
 ```
 
